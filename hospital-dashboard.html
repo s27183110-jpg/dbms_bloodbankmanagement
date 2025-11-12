@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hospital Dashboard - Blood Bank</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="main.css">
+</head>
+<body class="bg-gray-100">
+  
+  <!-- Navigation -->
+  <nav class="bg-red-600 text-white shadow-lg">
+    <div class="container mx-auto px-4 py-4">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+          <span class="text-2xl font-bold">🩸 Hospital Portal</span>
+          <span id="hospital-name" class="text-sm opacity-90"></span>
+        </div>
+        <div class="flex items-center space-x-6">
+          <div class="relative">
+            <button onclick="toggleWarnings()" class="relative hover:bg-red-700 px-3 py-2 rounded">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+              </svg>
+              <span id="warning-badge" class="absolute top-0 right-0 bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+            </button>
+          </div>
+          <button onclick="handleLogout()" class="hover:bg-red-700 px-4 py-2 rounded">Logout</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Warnings Dropdown -->
+  <div id="warnings-dropdown" class="hidden fixed right-4 top-16 w-96 bg-white rounded-lg shadow-2xl z-50 max-h-96 overflow-y-auto">
+    <div class="p-4 border-b">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-gray-800">System Warnings</h3>
+        <button onclick="markAllWarningsRead()" class="text-sm text-blue-600 hover:text-blue-800">Mark all read</button>
+      </div>
+    </div>
+    <div id="warnings-list" class="divide-y">
+      <!-- Populated by JavaScript -->
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container mx-auto px-4 py-8">
+    
+    <!-- Page Header -->
+    <div class="mb-8">
+      <h1 class="text-4xl font-bold text-gray-800">Hospital Dashboard</h1>
+      <p class="text-gray-600 mt-2">Manage your blood requests and patients</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-orange-500">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-600 text-sm">Pending Requests</p>
+            <p class="text-3xl font-bold text-gray-800" id="stat-pending">0</p>
+          </div>
+          <div class="bg-orange-100 p-3 rounded-full">
+            <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-green-500">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-600 text-sm">Fulfilled</p>
+            <p class="text-3xl font-bold text-gray-800" id="stat-fulfilled">0</p>
+          </div>
+          <div class="bg-green-100 p-3 rounded-full">
+            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-blue-500">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-600 text-sm">Total Patients</p>
+            <p class="text-3xl font-bold text-gray-800" id="stat-patients">0</p>
+          </div>
+          <div class="bg-blue-100 p-3 rounded-full">
+            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-red-500">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-600 text-sm">Fulfillment Rate</p>
+            <p class="text-3xl font-bold text-gray-800" id="stat-rate">0%</p>
+          </div>
+          <div class="bg-red-100 p-3 rounded-full">
+            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Blood Availability Alert -->
+    <div id="availability-alerts" class="mb-8">
+      <!-- Populated by JavaScript -->
+    </div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Blood Availability</h2>
+        <canvas id="availabilityChart"></canvas>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Request Status</h2>
+        <canvas id="statusChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="bg-white rounded-lg shadow-lg mb-8">
+      <div class="border-b">
+        <nav class="flex">
+          <button onclick="switchTab('requests')" id="tab-requests" class="px-6 py-4 font-semibold text-red-600 border-b-2 border-red-600">
+            Pending Requests
+          </button>
+          <button onclick="switchTab('patients')" id="tab-patients" class="px-6 py-4 font-semibold text-gray-600 hover:text-red-600">
+            My Patients
+          </button>
+          <button onclick="switchTab('history')" id="tab-history" class="px-6 py-4 font-semibold text-gray-600 hover:text-red-600">
+            Request History
+          </button>
+        </nav>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="p-6">
+        <!-- Pending Requests Tab -->
+        <div id="content-requests" class="tab-content">
+          <div class="overflow-x-auto">
+            <table class="min-w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Request ID</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Patient</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Blood Group</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Units</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Available</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200" id="requests-tbody">
+                <!-- Populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Patients Tab -->
+        <div id="content-patients" class="tab-content hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Patient ID</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Blood Group</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Age</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Condition</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Requests</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Request</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200" id="patients-tbody">
+                <!-- Populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- History Tab -->
+        <div id="content-history" class="tab-content hidden">
+          <div class="mb-4 flex gap-4">
+            <select id="history-blood-group" onchange="loadHistory()" class="px-4 py-2 border border-gray-300 rounded-lg">
+              <option value="">All Blood Groups</option>
+              <option value="a+">A+</option>
+              <option value="a-">A-</option>
+              <option value="b+">B+</option>
+              <option value="b-">B-</option>
+              <option value="o+">O+</option>
+              <option value="o-">O-</option>
+              <option value="ab+">AB+</option>
+              <option value="ab-">AB-</option>
+            </select>
+            <select id="history-status" onchange="loadHistory()" class="px-4 py-2 border border-gray-300 rounded-lg">
+              <option value="">All Status</option>
+              <option value="fulfilled">Fulfilled</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Request ID</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Patient</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Blood Group</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Units</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Request Date</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Donor</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200" id="history-tbody">
+                <!-- Populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Notification -->
+  <div id="notification" class="fixed top-4 right-4 hidden z-50"></div>
+
+  <script src="app.js"></script>
+  <script src="auth.js"></script>
+  <script src="hospital-dashboard.js"></script>
+</body>
+</html>
